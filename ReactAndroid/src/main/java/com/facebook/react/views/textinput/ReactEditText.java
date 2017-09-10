@@ -35,6 +35,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
@@ -80,6 +81,7 @@ public class ReactEditText extends EditText {
   private @Nullable String mReturnKeyType;
   private @Nullable SelectionWatcher mSelectionWatcher;
   private @Nullable ContentSizeWatcher mContentSizeWatcher;
+  private @Nullable ScrollWatcher mScrollWatcher;
   private final InternalKeyListener mKeyListener;
   private boolean mDetectScrollMovement = false;
 
@@ -106,6 +108,7 @@ public class ReactEditText extends EditText {
     mTextWatcherDelegator = null;
     mStagedInputType = getInputType();
     mKeyListener = new InternalKeyListener();
+    mScrollWatcher = null;
   }
 
   // After the text changes inside an EditText, TextView checks if a layout() has been requested.
@@ -172,6 +175,25 @@ public class ReactEditText extends EditText {
   }
 
   @Override
+  protected void onScrollChanged(int horiz, int vert, int oldHoriz, int oldVert) {
+    super.onScrollChanged(horiz, vert, oldHoriz, oldVert);
+
+    if (mScrollWatcher != null) {
+      mScrollWatcher.onScrollChanged(horiz, vert, oldHoriz, oldVert);
+    }
+  }
+
+  @Override
+  public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+    InputConnection connection = super.onCreateInputConnection(outAttrs);
+    if (isMultiline() && getBlurOnSubmit()) {
+      // Remove IME_FLAG_NO_ENTER_ACTION to keep the original IME_OPTION
+      outAttrs.imeOptions &= ~EditorInfo.IME_FLAG_NO_ENTER_ACTION;
+    }
+    return connection;
+  }
+
+  @Override
   public void clearFocus() {
     setFocusableInTouchMode(false);
     super.clearFocus();
@@ -218,6 +240,10 @@ public class ReactEditText extends EditText {
 
   public void setContentSizeWatcher(ContentSizeWatcher contentSizeWatcher) {
     mContentSizeWatcher = contentSizeWatcher;
+  }
+
+  public void setScrollWatcher(ScrollWatcher scrollWatcher) {
+    mScrollWatcher = scrollWatcher;
   }
 
   @Override
@@ -613,6 +639,10 @@ public class ReactEditText extends EditText {
         for (TextWatcher listener : mListeners) {
           listener.onTextChanged(s, start, before, count);
         }
+      }
+
+      if (mContentSizeWatcher != null) {
+        mContentSizeWatcher.onLayout();
       }
     }
 
