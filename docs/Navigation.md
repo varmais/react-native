@@ -4,13 +4,15 @@ title: Navigation
 layout: docs
 category: Guides
 permalink: docs/navigation.html
-next: performance
-previous: javascript-environment
+next: images
+previous: animations
 ---
 
-This guide covers the various navigation components available in React Native. If you are just getting started with navigation, you will probably want to use React Navigation.
+This guide covers the various navigation components available in React Native. If you are just getting started with navigation, you will probably want to use [React Navigation](docs/navigation.html#react-navigation). React Navigation provides an easy to use navigation solution, with the ability to present common stack navigation and tabbed navigation patterns on both iOS and Android. As this is a JavaScript implementation, it provides the greatest amount of configurability as well as flexibility when integrating with state management libraries such as [redux](https://reactnavigation.org/docs/guides/redux).
 
-If you are only targeting iOS and would like to stick to the native look and feel, check out `NavigatorIOS`. The `Navigator` component is older but has been thoroughly tested in production.
+If you're only targeting iOS, you may want to also check out [NavigatorIOS](docs/navigation.html#navigatorios) as a way of providing a native look and feel with minimal configuration, as it provides a wrapper around the native `UINavigationController` class. This component will not work on Android, however.
+
+If you'd like to achieve a native look and feel on both iOS and Android, or you're integrating React Native into an app that already manages navigation natively, the following libraries provide native navigation on both platforms: [native-navigation](http://airbnb.io/native-navigation/), [react-native-navigation](https://github.com/wix/react-native-navigation).
 
 ## React Navigation
 
@@ -56,7 +58,7 @@ class MainScreen extends React.Component {
 }
 ```
 
-React Navigation routers make it easy to override navigation logic or integrate it into redux. Because routers can be nested inside eachother, developers can override navigation logic for one area of the app without making widespread changes.
+React Navigation routers make it easy to override navigation logic or integrate it into redux. Because routers can be nested inside each other, developers can override navigation logic for one area of the app without making widespread changes.
 
 The views in React Navigation use native components and the `Animated` library to deliver 60fps animations that are run on the native thread. Plus, the animations and gestures can be easily customized.
 
@@ -148,7 +150,7 @@ Check out the [`NavigatorIOS` reference docs](docs/navigatorios.html) to learn m
 
 Since early 2016, React Native has shipped with an experimental re-implementation of the original `Navigator` component called `CardStack`. The major benefit it had over `Navigator` is the smooth native-thread animations provided by the Animated library.
 
-Because `NavigationExperimental` only included view components, it required a lot of boilerplate to use by itself. Several libraries sprung up around it, making it easier to use. Libraries such as `react-native-router-flux`, `ex-navigation`, and `react-router-native` all wrapped NavigationExperimental views in an easier-to-use API. Authors of many of these libraries now support React Navigation.
+Because `NavigationExperimental` only included view components, it required a lot of boilerplate to use by itself. Several libraries sprung up around it, making it easier to use. Libraries such as `react-native-router-flux` and `ex-navigation` wrapped NavigationExperimental views in an easier-to-use API. Authors of many of these libraries now support React Navigation.
 
 The `CardStack` and other NavigationExperimental views live on as a part of the React Navigation project. The new library aims to be easy to use, while continuing to enable the smooth and customizable animations that NavigationExperimental pioneered.
 

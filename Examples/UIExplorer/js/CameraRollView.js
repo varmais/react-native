@@ -83,6 +83,7 @@ var propTypes = {
 };
 
 var CameraRollView = React.createClass({
+  // $FlowFixMe(>=0.41.0)
   propTypes: propTypes,
 
   getDefaultProps: function(): Object {
@@ -125,6 +126,7 @@ var CameraRollView = React.createClass({
   rendererChanged: function() {
     var ds = new ListView.DataSource({rowHasChanged: this._rowHasChanged});
     this.state.dataSource = ds.cloneWithRows(
+      // $FlowFixMe(>=0.41.0)
       groupByEveryN(this.state.assets, this.props.imagesPerRow)
     );
   },
@@ -230,6 +232,7 @@ var CameraRollView = React.createClass({
       if (image === null) {
         return null;
       }
+      // $FlowFixMe(>=0.41.0)
       return this.props.renderImage(image);
     });
 
@@ -252,6 +255,7 @@ var CameraRollView = React.createClass({
       newState.lastCursor = data.page_info.end_cursor;
       newState.assets = this.state.assets.concat(assets);
       newState.dataSource = this.state.dataSource.cloneWithRows(
+        // $FlowFixMe(>=0.41.0)
         groupByEveryN(newState.assets, this.props.imagesPerRow)
       );
     }
