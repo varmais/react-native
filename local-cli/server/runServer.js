@@ -10,7 +10,6 @@
 
 const InspectorProxy = require('./util/inspectorProxy.js');
 const ReactPackager = require('../../packager/react-packager');
-const TerminalReporter = require('../../packager/src/lib/TerminalReporter');
 
 const attachHMRServer = require('./util/attachHMRServer');
 const connect = require('connect');
@@ -69,7 +68,6 @@ function runServer(args, config, readyCallback) {
 
       wsProxy = webSocketProxy.attachToServer(serverInstance, '/debugger-proxy');
       ms = messageSocket.attachToServer(serverInstance, '/message');
-      webSocketProxy.attachToServer(serverInstance, '/devtools');
       inspectorProxy.attachToServer(serverInstance, '/inspector');
       readyCallback();
     }
@@ -89,16 +87,32 @@ function getPackagerServer(args, config) {
   const providesModuleNodeModules =
     args.providesModuleNodeModules || defaultProvidesModuleNodeModules;
 
+  let LogReporter;
+  if (args.customLogReporterPath) {
+    try {
+      // First we let require resolve it, so we can require packages in node_modules
+      // as expected. eg: require('my-package/reporter');
+      LogReporter = require(args.customLogReporterPath);
+    } catch(e) {
+      // If that doesn't work, then we next try relative to the cwd, eg:
+      // require('./reporter');
+      LogReporter = require(path.resolve(args.customLogReporterPath));
+    }
+  } else {
+    LogReporter = require('../../packager/src/lib/TerminalReporter');
+  }
+
   return ReactPackager.createServer({
     assetExts: defaultAssetExts.concat(args.assetExts),
     blacklistRE: config.getBlacklistRE(),
     cacheVersion: '3',
     extraNodeModules: config.extraNodeModules,
     getTransformOptions: config.getTransformOptions,
+    hasteImpl: config.hasteImpl,
     platforms: defaultPlatforms.concat(args.platforms),
     projectRoots: args.projectRoots,
     providesModuleNodeModules: providesModuleNodeModules,
-    reporter: new TerminalReporter(),
+    reporter: new LogReporter(),
     resetCache: args.resetCache,
     transformModulePath: transformModulePath,
     verbose: args.verbose,
