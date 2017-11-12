@@ -19,6 +19,13 @@ global.__DEV__ = true;
 global.Promise = require.requireActual('promise');
 global.regeneratorRuntime = require.requireActual('regenerator-runtime/runtime');
 
+global.requestAnimationFrame = function(callback) {
+  setTimeout(callback, 0);
+};
+global.cancelAnimationFrame = function(id) {
+  clearTimeout(id);
+};
+
 jest
   .mock('setupDevtools')
   .mock('npmlog');
@@ -72,10 +79,12 @@ const mockNativeModules = {
     addEventListener: jest.fn(),
   },
   AsyncLocalStorage: {
-    clear: jest.fn(),
-    getItem: jest.fn(),
-    removeItem: jest.fn(),
-    setItem: jest.fn(),
+    multiGet: jest.fn((keys, callback) => process.nextTick(() => callback(null, []))),
+    multiSet: jest.fn((entries, callback) => process.nextTick(() => callback(null))),
+    multiRemove: jest.fn((keys, callback) => process.nextTick(() => callback(null))),
+    multiMerge: jest.fn((entries, callback) => process.nextTick(() => callback(null))),
+    clear: jest.fn(callback => process.nextTick(() => callback(null))),
+    getAllKeys: jest.fn(callback => process.nextTick(() => callback(null, []))),
   },
   BuildInfo: {
     appVersion: '0',
@@ -128,6 +137,17 @@ const mockNativeModules = {
   KeyboardObserver: {
     addListener: jest.fn(),
     removeListeners: jest.fn(),
+  },
+  Linking: {
+    openURL: jest.fn(),
+    canOpenURL: jest.fn(
+      () => new Promise((resolve) => resolve(true))
+    ),
+  },
+  LocationObserver: {
+    getCurrentPosition: jest.fn(),
+    startObserving: jest.fn(),
+    stopObserving: jest.fn(),
   },
   ModalFullscreenViewManager: {},
   Networking: {

@@ -9,9 +9,10 @@
 
 #import "RCTUITextView.h"
 
+#import <React/UIView+React.h>
+
 @implementation RCTUITextView
 {
-  BOOL _jsRequestingFirstResponder;
   UILabel *_placeholderView;
   UITextView *_detachedTextView;
 }
@@ -38,6 +39,7 @@ static UIColor *defaultPlaceholderTextColor()
     _placeholderView = [[UILabel alloc] initWithFrame:self.bounds];
     _placeholderView.isAccessibilityElement = NO;
     _placeholderView.numberOfLines = 0;
+    _placeholderView.textColor = defaultPlaceholderTextColor();
     [self addSubview:_placeholderView];
   }
 
@@ -67,31 +69,6 @@ static UIColor *defaultPlaceholderTextColor()
 {
   _textWasPasted = NO;
   [self invalidatePlaceholderVisibility];
-}
-
-#pragma mark - UIResponder
-
-- (void)reactWillMakeFirstResponder
-{
-  _jsRequestingFirstResponder = YES;
-}
-
-- (BOOL)canBecomeFirstResponder
-{
-  return _jsRequestingFirstResponder;
-}
-
-- (void)reactDidMakeFirstResponder
-{
-  _jsRequestingFirstResponder = NO;
-}
-
-- (void)didMoveToWindow
-{
-  if (_jsRequestingFirstResponder) {
-    [self becomeFirstResponder];
-    [self reactDidMakeFirstResponder];
-  }
 }
 
 #pragma mark - Overrides

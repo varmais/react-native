@@ -33,6 +33,7 @@
 #import "RCTScrollableProtocol.h"
 #import "RCTShadowView.h"
 #import "RCTUtils.h"
+#import "RCTUIManagerObserverCoordinator.h"
 #import "RCTView.h"
 #import "RCTViewManager.h"
 #import "UIView+React.h"
@@ -225,7 +226,6 @@ static UIViewAnimationOptions UIViewAnimationOptionsFromRCTAnimationType(RCTAnim
   NSDictionary *_componentDataByName;
 
   NSMutableSet<id<RCTComponent>> *_bridgeTransactionListeners;
-  NSMutableSet<id<RCTUIManagerObserver>> *_uiManagerObservers;
 }
 
 @synthesize bridge = _bridge;
@@ -306,7 +306,7 @@ RCT_EXPORT_MODULE()
   _rootViewTags = [NSMutableSet new];
 
   _bridgeTransactionListeners = [NSMutableSet new];
-  _uiManagerObservers = [NSMutableSet new];
+  _observerCoordinator = [RCTUIManagerObserverCoordinator new];
 
   _viewsToBeDeleted = [NSMutableSet new];
 
@@ -343,6 +343,16 @@ dispatch_queue_t RCTGetUIManagerQueue(void)
     }
   });
   return shadowQueue;
+}
+
+BOOL RCTIsUIManagerQueue()
+{
+  static void *queueKey = &queueKey;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    dispatch_queue_set_specific(RCTGetUIManagerQueue(), queueKey, queueKey, NULL);
+  });
+  return dispatch_get_specific(queueKey) == queueKey;
 }
 
 - (dispatch_queue_t)methodQueue
@@ -713,20 +723,6 @@ dispatch_queue_t RCTGetUIManagerQueue(void)
   }
 }
 
-- (void)addUIManagerObserver:(id<RCTUIManagerObserver>)observer
-{
-  dispatch_async(RCTGetUIManagerQueue(), ^{
-    [self->_uiManagerObservers addObject:observer];
-  });
-}
-
-- (void)removeUIManagerObserver:(id<RCTUIManagerObserver>)observer
-{
-  dispatch_async(RCTGetUIManagerQueue(), ^{
-    [self->_uiManagerObservers removeObject:observer];
-  });
-}
-
 /**
  * A method to be called from JS, which takes a container ID and then releases
  * all subviews for that container upon receipt.
@@ -1077,10 +1073,7 @@ RCT_EXPORT_METHOD(focus:(nonnull NSNumber *)reactTag)
 {
   [self addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
     UIView *newResponder = viewRegistry[reactTag];
-    [newResponder reactWillMakeFirstResponder];
-    if ([newResponder becomeFirstResponder]) {
-      [newResponder reactDidMakeFirstResponder];
-    }
+    [newResponder reactFocus];
   }];
 }
 
@@ -1088,7 +1081,7 @@ RCT_EXPORT_METHOD(blur:(nonnull NSNumber *)reactTag)
 {
   [self addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry){
     UIView *currentResponder = viewRegistry[reactTag];
-    [currentResponder resignFirstResponder];
+    [currentResponder reactBlur];
   }];
 }
 
@@ -1152,10 +1145,19 @@ RCT_EXPORT_METHOD(dispatchViewManagerCommand:(nonnull NSNumber *)reactTag
     [self addUIBlock:uiBlock];
   }
 
+  [_observerCoordinator uiManagerWillPerformLayout:self];
+
   // Perform layout
   for (NSNumber *reactTag in _rootViewTags) {
     RCTRootShadowView *rootView = (RCTRootShadowView *)_shadowViewRegistry[reactTag];
     [self addUIBlock:[self uiBlockWithLayoutUpdateForRootView:rootView]];
+  }
+
+  [_observerCoordinator uiManagerDidPerformLayout:self];
+
+  // Properies propagation
+  for (NSNumber *reactTag in _rootViewTags) {
+    RCTRootShadowView *rootView = (RCTRootShadowView *)_shadowViewRegistry[reactTag];
     [self _amendPendingUIBlocksWithStylePropagationUpdateForShadowView:rootView];
   }
 
@@ -1168,9 +1170,7 @@ RCT_EXPORT_METHOD(dispatchViewManagerCommand:(nonnull NSNumber *)reactTag
     }
   }];
 
-  for (id<RCTUIManagerObserver> observer in _uiManagerObservers) {
-    [observer uiManagerWillFlushUIBlocks:self];
-  }
+  [_observerCoordinator uiManagerWillFlushUIBlocks:self];
 
   [self flushUIBlocks];
 }
@@ -1210,7 +1210,7 @@ RCT_EXPORT_METHOD(dispatchViewManagerCommand:(nonnull NSNumber *)reactTag
 {
   // If there is an active batch layout will happen when batch finished, so we will wait for that.
   // Otherwise we immidiately trigger layout.
-  if (![_bridge isBatchActive]) {
+  if (![_bridge isBatchActive] && ![_bridge isLoading]) {
     [self _layoutAndMount];
   }
 }
