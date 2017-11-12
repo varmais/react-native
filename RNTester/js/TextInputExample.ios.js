@@ -239,6 +239,7 @@ class BlurOnSubmitExample extends React.Component {
           ref="4"
           style={styles.default}
           keyboardType="numeric"
+          returnKeyType="done"
           placeholder="blurOnSubmit = false"
           blurOnSubmit={false}
           onSubmitEditing={() => this.focusNextField('5')}
@@ -800,6 +801,24 @@ exports.examples = [
                 maxHeight: 100
               }}
               testID="multiline_textinput"
+              multiline={true}
+              placeholder="Placeholder defines intrinsic size"
+            />
+          </View>
+          <View>
+            <TextInput
+              style={{
+                fontSize: 16,
+                backgroundColor: '#eeeeee',
+                borderColor: '#666666',
+                borderWidth: 5,
+                borderTopWidth: 20,
+                borderRadius: 10,
+                borderBottomRightRadius: 20,
+                padding: 10,
+                paddingTop: 20,
+              }}
+              testID="multiline_textinput_with_flex"
               multiline={true}
               placeholder="Placeholder defines intrinsic size"
             />

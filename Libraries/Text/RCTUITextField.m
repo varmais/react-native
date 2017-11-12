@@ -71,6 +71,16 @@
                                                                attributes:attributes];
 }
 
+- (BOOL)isEditable
+{
+  return self.isEnabled;
+}
+
+- (void)setEditable:(BOOL)editable
+{
+  self.enabled = editable;
+}
+
 #pragma mark - Caret Manipulation
 
 - (CGRect)caretRectForPosition:(UITextPosition *)position
@@ -94,7 +104,21 @@
   return [self textRectForBounds:bounds];
 }
 
+#pragma mark - Overrides
+
+- (void)paste:(id)sender
+{
+  [super paste:sender];
+  _textWasPasted = YES;
+}
+
 #pragma mark - Layout
+
+- (CGSize)contentSize
+{
+  // Returning size DOES contain `textContainerInset` (aka `padding`).
+  return self.intrinsicContentSize;
+}
 
 - (CGSize)intrinsicContentSize
 {
@@ -104,11 +128,13 @@
   size = CGSizeMake(RCTCeilPixelValue(size.width), RCTCeilPixelValue(size.height));
   size.width += _textContainerInset.left + _textContainerInset.right;
   size.height += _textContainerInset.top + _textContainerInset.bottom;
+  // Returning size DOES contain `textContainerInset` (aka `padding`).
   return size;
 }
 
 - (CGSize)sizeThatFits:(CGSize)size
 {
+  // All size values here contain `textContainerInset` (aka `padding`).
   CGSize intrinsicSize = self.intrinsicContentSize;
   return CGSizeMake(MIN(size.width, intrinsicSize.width), MIN(size.height, intrinsicSize.height));
 }
